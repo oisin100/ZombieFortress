@@ -17,7 +17,7 @@ public class World {
 				objs.add(new TileGrass(i,p));
 			}
 		}
-		for(int x = -4; x <= 4; x++){
+		for(int x = -3; x <= 3; x++){
 			for(int y = -3; y <= 3; y++){
 				objs.add(new TileConcreteFloor(x,y));
 			}
@@ -36,14 +36,9 @@ public class World {
 		objs.add(new TileConcreteFloor(-1, -7));
 		objs.add(new TileConcreteFloor(1, -7));
 		
-		for(int x = -4; x <= 4; x++){
-			for(int y = -13; y <= -8; y++){
+		for(int x = -3; x <= 3; x++){
+			for(int y = -12; y <= -8; y++){
 				objs.add(new TileConcreteFloor(x,y));
-				if(y == -13 || y == -8){
-					if(x == -4 || x == 4){
-						objs.add(new TileConcreteWall(x,y));
-					}
-				}
 			}
 		}
 	}
