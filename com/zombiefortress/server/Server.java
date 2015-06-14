@@ -26,11 +26,10 @@ import com.zombiefortress.server.Object.BaseObject;
 
 public class Server {
 
+	private static PluginManager pluginmanager;
 	private static Logger logger = Logger.getLogger("Server");
-
 	private static String version = "INDEV_1.4";
 	private static int buildno = 19;
-
 	private static DatagramSocket socket;
 	private static World world;
 	private static ArrayList<Player> players;
@@ -73,7 +72,7 @@ public class Server {
 		
 		if(stopRequested){return;}
 		
-		PluginManager manager = new PluginManager();
+		pluginmanager = new PluginManager();
 		
 		receivePackets();
 		commandListenerThread();
@@ -82,6 +81,8 @@ public class Server {
 		sendMessage("Server started in: " + (System.currentTimeMillis() - time) +" Milliseconds");
 		sendMessage("Type 'Help' For a list of commands");
 		sendMessage("Please use the command 'stop' To stop the server");
+		
+		world.update();
 	}
 
 	public static void sendMessage(String message){
@@ -137,6 +138,35 @@ public class Server {
 			
 		}.start();
 		
+	}
+	
+	private static void updateThread(){
+		new Thread(){
+			public void run(){
+				
+				int times = 0;
+				long time = System.currentTimeMillis();
+				
+				while(!stopRequested){
+					if(times <= 30){
+						if(System.currentTimeMillis() - time >= 1000){
+							world.update();
+							times++;
+						}
+						else{
+							times = 0;
+							time = System.currentTimeMillis();
+						}
+					}
+					else{
+						if(System.currentTimeMillis() - time >= 1000){
+							times = 0;
+						}
+					}
+					
+				}
+			}
+		}.start();
 	}
 	
 	private static void commandListenerThread(){
@@ -315,5 +345,8 @@ public class Server {
 		return config;
 	}
 	
+	public PluginManager getPluginManager(){
+		return pluginmanager;
+	}
 	
 }
