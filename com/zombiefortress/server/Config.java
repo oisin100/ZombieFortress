@@ -34,22 +34,17 @@ public class Config {
 		file.mkdir();
 		
 		try {
-			file = new File(getProgramPath()+"/bannedplayers.yml");
+			file = new File(getProgramPath()+"/banned-players.yml");
+			if(!file.exists())
+				file.createNewFile();
+			file = new File(getProgramPath()+"/whitelisted-players.yml");
 			if(!file.exists())
 				file.createNewFile();
 		} catch (IOException e2) {
-			System.out.println("Failed to find/read/write To bannedplayers.yml");
+			System.out.println("Failed to find/read/write To file");
 			e2.printStackTrace();
 		}
 		
-		try {
-			file = new File(getProgramPath()+"/whitelistedplayers.yml");
-			if(!file.exists())
-				file.createNewFile();
-		} catch (IOException e2) {
-			System.out.println("Failed to find/read/write To whitelistedplayers.yml");
-			e2.printStackTrace();
-		}
 		file = new File(getProgramPath()+"/config.yml");
 		if(!file.exists()){
 			try {
