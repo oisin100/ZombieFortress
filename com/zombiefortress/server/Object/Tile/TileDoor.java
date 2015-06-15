@@ -5,7 +5,6 @@ import com.zombiefortress.server.Server;
 
 public class TileDoor extends TileObject{
 	
-	private boolean isInteractedWith;
 	private int state;
 
 	public TileDoor(int X, int Y) {
@@ -14,9 +13,9 @@ public class TileDoor extends TileObject{
 	
 	@Override
 	public void update(){
-		//MORETODO
-		if(isInteractedWith){
-			isInteractedWith = false;
+		
+		if(data.equalsIgnoreCase("interacted")){
+			data = "";
 			if(state == 1){
 				state = 0;
 			}else{
@@ -31,7 +30,7 @@ public class TileDoor extends TileObject{
 	}
 	
 	public void setOpen(boolean yes){
-		this.isInteractedWith = yes;
+		this.data = "interacted";
 	}
 	
 	public boolean isOpen(){

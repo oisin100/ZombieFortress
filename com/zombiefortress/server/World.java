@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import com.zombiefortress.server.Object.BaseObject;
 import com.zombiefortress.server.Object.Tile.TileConcreteFloor;
 import com.zombiefortress.server.Object.Tile.TileConcreteWall;
+import com.zombiefortress.server.Object.Tile.TileDoor;
 import com.zombiefortress.server.Object.Tile.TileGrass;
 
 public class World {
@@ -67,6 +68,9 @@ public class World {
 		}
 		if(ID == Material.CONCRETE_WALL){
 			objs.add(new TileConcreteWall(x,y));
+		}
+		if(ID == Material.DOOR){
+			objs.add(new TileDoor(x,y));
 		}
 	}
 }

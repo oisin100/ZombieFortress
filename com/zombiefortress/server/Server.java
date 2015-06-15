@@ -282,6 +282,25 @@ public class Server {
 						}
 						}
 					}
+					if(type.equalsIgnoreCase("cd")){
+						String[] data = dataname[1].split(",");
+						if(data.length == 4){
+							int ID = Integer.parseInt(data[0].trim());
+							int x = Integer.parseInt(data[1].trim());
+							int y = Integer.parseInt(data[2].trim());
+							String changeddata = data[3];
+							
+							for(BaseObject obj : world.getObjects()){
+								if(obj.getPosX() == x){
+									if(obj.getPosY() == y){
+										if(obj.getID() == ID){
+											obj.setData(changeddata);
+										}
+									}
+								}
+							}
+						}
+					}
 					
 				}
 				this.interrupt();

@@ -9,6 +9,8 @@ public class BaseObject {
 	protected int posX;
 	protected int posY;
 	
+	protected String data;
+	
 	public BaseObject(int X, int Y, int ID){
 		this.posX = X;
 		this.posY = Y;
@@ -34,6 +36,10 @@ public class BaseObject {
 	
 	public boolean isSoliid(){
 		return this.isSolid;
+	}
+	
+	public void setData(String data){
+		this.data = data;
 	}
 	
 	public void update(){};
