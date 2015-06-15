@@ -133,6 +133,13 @@ public class Server {
 			@Override
 			public void run(){
 				while(!stopRequested){
+					ArrayList<Player> array = new ArrayList<Player>();
+					for(Player p : players){
+						if(p.isOnline()){
+							array.add(p);
+						}
+					}
+					array.removeAll(array);
 				}
 			}
 			
@@ -262,11 +269,10 @@ public class Server {
 						Player player = getPlayer(receivePacket.getAddress(), receivePacket.getPort());
 						if(player != null){
 							String[] data = dataname[1].split(",");
-							float x = Float.parseFloat(data[0].trim());
-							float y = Float.parseFloat(data[1].trim());
+							int x = Integer.parseInt(data[0].trim());
+							int y = Integer.parseInt(data[1].trim());
 							player.setX(x);
 							player.setY(y);
-							//.teleport(x, y);
 							for(Player p : players){
 							if(p != null){
 								if(p != player){
@@ -275,8 +281,8 @@ public class Server {
 							}
 						}
 						}
-						
 					}
+					
 				}
 				this.interrupt();
 			}		
