@@ -23,10 +23,13 @@ public class Config {
 	
 	private int port;
 	private int maxplayers;	
+	private int viewdistance;
+	private boolean pluginsEnabled;
+	private boolean permissions;
+	
 	private ArrayList<String> banned;
 	private File file;
-	private BufferedWriter out;
-	private boolean permissions;
+	private BufferedWriter out;	
 	
 	public Config(){
 		banned = new ArrayList<String>();
@@ -57,6 +60,10 @@ public class Config {
 				out.append("whitelist: false");
 				out.newLine();
 				out.append("permissions: false");
+				out.newLine();
+				out.append("plugins: true");
+				out.newLine();
+				out.append("view-distance: 10");
 				out.close();
 			} catch (IOException e1) {
 				e1.printStackTrace();
@@ -76,11 +83,9 @@ public class Config {
 				if(data[0].equalsIgnoreCase("maxplayers")){
 					this.maxplayers = Integer.parseInt(data[1].trim());
 				}
-				
 				if(data[0].equalsIgnoreCase("port")){
 					this.port = Integer.parseInt(data[1].trim());
 				}
-				
 				if(data[0].equalsIgnoreCase("permissions")){
 					if(data[1].trim().equalsIgnoreCase("true")){
 						this.permissions = true;
@@ -88,6 +93,17 @@ public class Config {
 					else{
 						this.permissions = false;
 					}
+				}
+				if(data[0].equalsIgnoreCase("plugins")){
+					if(data[1].trim().equalsIgnoreCase("true")){
+						this.pluginsEnabled = true;
+					}
+					else{
+						this.pluginsEnabled = false;
+					}
+				}
+				if(data[0].equalsIgnoreCase("view-distance")){
+					this.port = Integer.parseInt(data[1].trim());
 				}
 			}
 
@@ -121,5 +137,13 @@ public class Config {
 	
 	public boolean isPermissionsEnabled(){
 		return permissions;
+	}
+	
+	public int getViewDistance(){
+		return viewdistance;
+	}
+	
+	public boolean isPluginsEnabled(){
+		return pluginsEnabled;
 	}
 }

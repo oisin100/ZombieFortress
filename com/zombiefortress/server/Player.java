@@ -3,6 +3,8 @@ package com.zombiefortress.server;
 import java.net.InetAddress;
 import java.util.UUID;
 
+import com.zombiefortress.server.Event.EventPlayerMove;
+
 public class Player {
 
 	private int x;
@@ -14,12 +16,15 @@ public class Player {
 	private String name;
 	private boolean isOnline;
 	
+	private int health;
+	
 	public Player(InetAddress address, int port, String name){
 		this.address = address;
 		this.port = port;
 		this.name = name;
 		this.isOnline = true;
 		this.uuid = UUID.randomUUID();
+		health = 1000;
 	}
 
 	public String getName() {
@@ -29,7 +34,15 @@ public class Player {
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	public int getHealth(){
+		return health;
+	}
 
+	public void setHealth(int health){
+		this.health = health;
+	}
+	
 	public InetAddress getAddress() {
 		return address;
 	}
@@ -52,20 +65,28 @@ public class Player {
 		Server.sendPacket("tp",x2 + "," + y2,this);
 	}
 	
-	public float getPosX(){
+	public int getPosX(){
 		return this.x;
 	}
 	
-	public float getPosY(){
+	public int getPosY(){
 		return this.y;
+	}
+	
+	public void moveX(int x){
+		new EventPlayerMove(this,  x, this.y).callEvent();
+	}
+	
+	public void moveY(int y){
+		new EventPlayerMove(this,  this.x, y).callEvent();
 	}
 
 	public void setX(int x) {
-		this.x = x;		
+		this.x = x;
 	}
 	
 	public void setY(int y) {
-		this.y = y;		
+		this.y = y;
 	}
 	
 	public boolean isOnline(){
@@ -73,7 +94,7 @@ public class Player {
 	}
 	
 	public void kickPlayer(String reason){
-		Server.sendPacket("disco", reason, this);
+		Server.sendPacket("kick", reason, this);
 		Server.sendMessage(name + " Was kicked for " + reason);
 		this.isOnline = false;
 	}

@@ -6,10 +6,20 @@ public class ServerPlugin {
 	private String author;
 	private String version;
 	
+	private boolean isEnabled = true;
+	
 	public ServerPlugin(String name, String author, String version){
 		this.name = name;
 		this.author = author;
 		this.version = version;
+	}
+	
+	public boolean isEnabled(){
+		return isEnabled;
+	}
+	
+	public void setIsEnabled(boolean isEnabled){
+		this.isEnabled = isEnabled;
 	}
 	
 	public String getName(){

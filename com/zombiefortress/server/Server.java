@@ -1,9 +1,6 @@
 package com.zombiefortress.server;
 
-import java.io.BufferedReader;
-import java.io.Console;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -11,7 +8,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Timer;
 import java.util.logging.Logger;
 
 import com.zombiefortress.server.Command.Command;
@@ -21,11 +17,15 @@ import com.zombiefortress.server.Command.Sender;
 import com.zombiefortress.server.Command.SetObjectCommand;
 import com.zombiefortress.server.Command.StopCommand;
 import com.zombiefortress.server.Command.VersionCommand;
+import com.zombiefortress.server.Event.EventHandler;
+import com.zombiefortress.server.Event.EventPlayerLogin;
 import com.zombiefortress.server.Object.BaseObject;
+import com.zombiefortress.server.Object.EntityZombie;
 
 
 public class Server {
 
+	private static ArrayList<EventHandler> eventhandlers;
 	private static PluginManager pluginmanager;
 	private static Logger logger = Logger.getLogger("Server");
 	private static String version = "INDEV_1.4";
@@ -42,20 +42,16 @@ public class Server {
 	public static void main(String[] args) {
 		config = new Config();
 		Calendar calendar = Calendar.getInstance();
-		world = new World();
+
 		long time = System.currentTimeMillis();
 
 		packets = new ArrayList<Packet>();
 		players = new ArrayList<Player>();
 		commands = new ArrayList<Command>();
-		
-		commands.add(new HelpCommand());
-		commands.add(new ListCommand());
-		commands.add(new StopCommand());
-		commands.add(new VersionCommand());
-		commands.add(new SetObjectCommand());
-		
-		
+
+
+
+
 
 		sendMessage("Server version: " + version);
 		sendMessage("Server build: " + buildno);
@@ -66,22 +62,32 @@ public class Server {
 			sendMessage("Started server on port: " + socket.getLocalPort());
 		} catch (SocketException e) {
 			sendMessage("Failed to create new instance of socket. Server already started on that port?");
-			
+
 			stopRequested = true;
 		}
-		
+
 		if(stopRequested){return;}
-		
+
+		commands.add(new HelpCommand());
+		commands.add(new ListCommand());
+		commands.add(new StopCommand());
+		commands.add(new VersionCommand());
+		commands.add(new SetObjectCommand());
+
 		pluginmanager = new PluginManager();
-		
+
+		world = new World();
+		world.getObjects().add(new EntityZombie(256,256));
+
 		receivePackets();
 		commandListenerThread();
+		updateThread();
 		keepAliveThread();
 
 		sendMessage("Server started in: " + (System.currentTimeMillis() - time) +" Milliseconds");
 		sendMessage("Type 'Help' For a list of commands");
 		sendMessage("Please use the command 'stop' To stop the server");
-		
+
 		world.update();
 	}
 
@@ -89,13 +95,12 @@ public class Server {
 		Date date = Calendar.getInstance().getTime();
 		System.out.println("[" + date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+" INFO ] " + message);
 	}
-	
+
 	public static ArrayList<Player> getPlayers(){
 		return players;
 	}
 
 	public static void sendPacket(Packet p, Player player){
-		String[] data = p.getData();
 		sendPacket(p.getType(), p.getData(), player);
 	}
 
@@ -104,78 +109,57 @@ public class Server {
 	}
 
 	public static void sendPacket(String type, String data, Player player){
-
-		new Thread(){
-
-			public void run(){
-				try {
-					if(player.getAddress().isReachable(20000)){
-						byte[] sendData = new byte[1024];
-						sendData = (type +":"+ data).getBytes();
-						DatagramPacket packet = new DatagramPacket(sendData, sendData.length, player.getAddress(), player.getPort());
-						socket.send(packet);
-					}
-					else{
-						System.out.println("Connection timed out");
-						players.remove(player);
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
+		try {
+			if(!socket.isClosed()){
+				if(player.getAddress().isReachable(20000)){
+					byte[] sendData = new byte[1024];
+					sendData = (type +":"+ data).getBytes();
+					DatagramPacket packet = new DatagramPacket(sendData, sendData.length, player.getAddress(), player.getPort());
+					socket.send(packet);
 				}
-			}
-		}.start();
+				else{
+					System.out.println("Connection timed out");
+					players.remove(player);
+				}
+			}		
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+
 	}
-	
+
 	private static void keepAliveThread() {
-		
+
 		new Thread(){
-			
+
 			@Override
 			public void run(){
 				while(!stopRequested){
-					ArrayList<Player> array = new ArrayList<Player>();
-					for(Player p : players){
-						if(p.isOnline()){
-							array.add(p);
-						}
-					}
-					array.removeAll(array);
+					//TODO
 				}
 			}
-			
-		}.start();
-		
+
+		};
+
 	}
-	
+
 	private static void updateThread(){
 		new Thread(){
 			public void run(){
-				
-				int times = 0;
-				long time = System.currentTimeMillis();
-				
 				while(!stopRequested){
-					if(times <= 30){
-						if(System.currentTimeMillis() - time >= 1000){
-							world.update();
-							times++;
-						}
-						else{
-							times = 0;
-							time = System.currentTimeMillis();
-						}
+					world.update();
+					try {
+						Thread.sleep(33);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-					else{
-						if(System.currentTimeMillis() - time >= 1000){
-							times = 0;
-						}
-					}
-					
 				}
 			}
 		}.start();
 	}
-	
+
 	private static void commandListenerThread(){
 		new Thread(){
 
@@ -205,7 +189,7 @@ public class Server {
 
 		}.start();
 	}
-	
+
 	public static void removePlayer(Player p){
 		if(players.contains(p)){
 			players.remove(p);
@@ -214,7 +198,7 @@ public class Server {
 			}
 		}
 	}
-	
+
 	public static void addPlayer(Player p){
 		if(!players.contains(p)){
 			for(Player player : players){
@@ -242,10 +226,7 @@ public class Server {
 
 					if(type.equalsIgnoreCase("login")){
 						Player p = new Player(receivePacket.getAddress(),receivePacket.getPort(),dataname[1].trim());
-						//p.teleport(0, 0);
-						addPlayer(p);
-						System.out.println(("Player: " + p.getName() + " Logged in with the ip: " + p.getAddress()).trim());
-						sendWorld(p);
+						new EventPlayerLogin(p).callEvent();;
 					}
 
 					if(type.equalsIgnoreCase("chat")){
@@ -264,22 +245,22 @@ public class Server {
 						}
 						System.out.println("<" + player.getName() +">: " + dataname[1]);
 					}
-					
+
 					if(type.equalsIgnoreCase("pp")){
 						Player player = getPlayer(receivePacket.getAddress(), receivePacket.getPort());
 						if(player != null){
 							String[] data = dataname[1].split(",");
-							int x = Integer.parseInt(data[0].trim());
-							int y = Integer.parseInt(data[1].trim());
-							player.setX(x);
-							player.setY(y);
+							int x = (int) Float.parseFloat(data[0].trim());
+							int y = (int) Float.parseFloat(data[1].trim());
+							player.moveX(x);
+							player.moveY(y);
 							for(Player p : players){
-							if(p != null){
-								if(p != player){
-									sendPacket("pm", player.getName() + "," + player.getPosX() + "," + player.getPosY(), p);
+								if(p != null){
+									if(p != player){
+										sendPacket("pm", player.getName() + "," + player.getPosX() + "," + player.getPosY(), p);
+									}
 								}
 							}
-						}
 						}
 					}
 					if(type.equalsIgnoreCase("cd")){
@@ -289,7 +270,7 @@ public class Server {
 							int x = Integer.parseInt(data[1].trim());
 							int y = Integer.parseInt(data[2].trim());
 							String changeddata = data[3];
-							
+
 							for(BaseObject obj : world.getObjects()){
 								if(obj.getPosX() == x){
 									if(obj.getPosY() == y){
@@ -301,25 +282,57 @@ public class Server {
 							}
 						}
 					}
-					
+
 				}
-				this.interrupt();
 			}		
 		}.start();
 
 	}
 
-	protected static void sendWorld(Player p) {
-		for(BaseObject obj : getWorld().getObjects()){
-			sendPacket("so",obj.getID()+","+obj.getPosX()+","+obj.getPosY(), p);
-		}
-		sendPacket("finished","finished",p);
+	public static void sendWorld(Player p) {
+		new Thread(){
+			@Override
+			public void run(){
+
+				int objcount = 0;
+
+				for(BaseObject obj : world.getObjects()){
+					objcount++;
+				}
+
+				sendMessage(""+objcount);
+
+				sendPacket("total", ""+objcount, p);
+
+				for(BaseObject obj : world.getObjects()){
+
+					new Thread(){
+						@Override
+						public void run(){
+							if(obj.getID() <= 70){
+								sendPacket("so",obj.getID()+","+obj.getPosX()+","+obj.getPosY(), p);
+							}
+							if(obj.getID() == 100){
+								EntityZombie zombie = (EntityZombie) obj;
+								sendPacket("az", zombie.getUID() + "," + zombie.getPosX() + "," + zombie.getPosY(), p);
+							}
+						}
+					}.start();
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+
+			}
+		}.start();
 	}
-	
+
 	public static World getWorld(){
 		return world;
 	}
-	
+
 	public static Player getPlayer(InetAddress address, int port){
 		for(Player p : players){
 			if(p.getAddress().getHostAddress().equals(address.getHostAddress())){
@@ -349,6 +362,7 @@ public class Server {
 	}
 
 	public static void stopServer(){
+		pluginmanager.onDisable();
 		sendMessage("Server stopping.");
 		socket.close();
 		stopRequested = true;
@@ -369,9 +383,19 @@ public class Server {
 	public static Config getConfig() {
 		return config;
 	}
-	
+
 	public PluginManager getPluginManager(){
 		return pluginmanager;
 	}
-	
+
+	public static ArrayList<EventHandler> getEventHandlers(){
+		return eventhandlers;
+	}
+
+	public static void registerEventHandler(EventHandler handler){
+		if(eventhandlers == null)
+			eventhandlers = new ArrayList<EventHandler>();
+		eventhandlers.add(handler);
+	}
+
 }
