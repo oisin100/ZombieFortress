@@ -17,7 +17,7 @@ public class World {
 	public World(){
 		zombiecount = 0;
 		for(int i = -25; i <= 25; i++){
-			for(int p = -25; p <= 25; p++){
+			for(int p = -10; p <= 10; p++){
 				objs.add(new TileGrass(i,p));
 			}
 		}

@@ -103,7 +103,7 @@ public class Config {
 					}
 				}
 				if(data[0].equalsIgnoreCase("view-distance")){
-					this.port = Integer.parseInt(data[1].trim());
+					this.viewdistance = Integer.parseInt(data[1].trim());
 				}
 			}
 

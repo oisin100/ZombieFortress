@@ -1,5 +1,6 @@
 package com.zombiefortress.server.Event;
 
+import com.zombiefortress.server.Packet;
 import com.zombiefortress.server.Player;
 import com.zombiefortress.server.Server;
 
@@ -14,9 +15,7 @@ public class EventPlayerLogin extends Event{
 
 	@Override
 	public void activateEvent() {
-		Server.addPlayer(player);
-		Server.sendMessage(("Player: " + player.getName() + " Logged in with the ip: " + player.getAddress()).trim());
-		Server.sendWorld(player);
+		Server.getPackets().add(new Packet("login", player.getName() + "," + player.getAddress() + "," + player.getPort()));	
 	}
 	
 	public void kickPlayer(String reason){

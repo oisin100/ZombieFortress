@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -25,11 +28,12 @@ import com.zombiefortress.server.Object.EntityZombie;
 
 public class Server {
 
+	private static  ArrayList<Player> forremoveplayers = null;
 	private static ArrayList<EventHandler> eventhandlers;
 	private static PluginManager pluginmanager;
 	private static Logger logger = Logger.getLogger("Server");
 	private static String version = "INDEV_1.4";
-	private static int buildno = 19;
+	private static int buildno = 20;
 	private static DatagramSocket socket;
 	private static World world;
 	private static ArrayList<Player> players;
@@ -45,24 +49,21 @@ public class Server {
 
 		long time = System.currentTimeMillis();
 
+		forremoveplayers = new ArrayList<Player>();
 		packets = new ArrayList<Packet>();
 		players = new ArrayList<Player>();
 		commands = new ArrayList<Command>();
 
-
-
-
-
 		sendMessage("Server version: " + version);
 		sendMessage("Server build: " + buildno);
 		sendMessage("System Date: " + calendar.getTime().getDate()+"/"+calendar.getTime().getMonth()+"/"+calendar.getTime().getYear());
-
+		
 		try {
+			sendMessage("Starting server on port: " + config.getPort());
 			socket = new DatagramSocket(config.getPort());
-			sendMessage("Started server on port: " + socket.getLocalPort());
 		} catch (SocketException e) {
 			sendMessage("Failed to create new instance of socket. Server already started on that port?");
-
+			e.printStackTrace();
 			stopRequested = true;
 		}
 
@@ -82,7 +83,6 @@ public class Server {
 		receivePackets();
 		commandListenerThread();
 		updateThread();
-		keepAliveThread();
 
 		sendMessage("Server started in: " + (System.currentTimeMillis() - time) +" Milliseconds");
 		sendMessage("Type 'Help' For a list of commands");
@@ -129,26 +129,42 @@ public class Server {
 
 	}
 
-	private static void keepAliveThread() {
-
-		new Thread(){
-
-			@Override
-			public void run(){
-				while(!stopRequested){
-					//TODO
-				}
-			}
-
-		};
-
-	}
 
 	private static void updateThread(){
 		new Thread(){
 			public void run(){
+				
 				while(!stopRequested){
+					ArrayList<Packet> forremoval = new ArrayList<Packet>();
 					world.update();
+					for(Packet p : packets){
+						String[] data = p.getData();
+						if(p.getType().equals("login")){
+							forremoval.add(p);
+							Player player = null;
+							try {
+								player = new Player(InetAddress.getByName(data[1].replaceAll("/", "")), Integer.parseInt(data[2]), data[0]);
+							} catch (NumberFormatException | UnknownHostException e) {
+								e.printStackTrace();
+							}
+							Server.addPlayer(player);
+							Server.sendMessage(("Player: " + player.getName() + " Logged in with the ip: " + player.getAddress()).trim());
+						}
+					}
+					for(Packet p : forremoval){
+						packets.remove(p);
+					}
+					for(Player p : forremoveplayers){
+						players.remove(p);
+					}
+					
+					forremoveplayers.clear();
+					
+					for(Player p : players){
+						if(System.currentTimeMillis() - p.getLastKeepAlive() >= 20000){
+							kickPlayer(p, "You failed to send a keep alive packet.");
+						}
+					}
 					try {
 						Thread.sleep(33);
 					} catch (InterruptedException e) {
@@ -190,9 +206,11 @@ public class Server {
 		}.start();
 	}
 
-	public static void removePlayer(Player p){
+	public static void kickPlayer(Player p, String reason){
 		if(players.contains(p)){
-			players.remove(p);
+			forremoveplayers.add(p);
+			sendMessage(p.getName() + " Was Kicked for " + reason);
+			sendPacket("kick", reason, p);
 			for(Player player : players){
 				sendPacket("ru", p.getName(), player); 
 			}
@@ -200,11 +218,15 @@ public class Server {
 	}
 
 	public static void addPlayer(Player p){
-		if(!players.contains(p)){
+		if(getPlayer(p.getName()) == null){
 			for(Player player : players){
 				sendPacket("cu", p.getName(), player);
 			}
 			players.add(p);
+			Server.sendWorld(p);
+		}
+		else{
+			sendPacket("kick", "This player has already connected.", p);
 		}
 	}
 
@@ -223,10 +245,12 @@ public class Server {
 					String[] dataname = modifiedSentence.split(":");
 
 					String type = dataname[0];
-
+					if(type.equalsIgnoreCase("ka")){
+						getPlayer(receivePacket.getAddress(), receivePacket.getPort()).keepAlive();
+					}
 					if(type.equalsIgnoreCase("login")){
 						Player p = new Player(receivePacket.getAddress(),receivePacket.getPort(),dataname[1].trim());
-						new EventPlayerLogin(p).callEvent();;
+						new EventPlayerLogin(p).callEvent();
 					}
 
 					if(type.equalsIgnoreCase("chat")){
@@ -289,7 +313,7 @@ public class Server {
 
 	}
 
-	public static void sendWorld(Player p) {
+	public static void sendWorld(final Player p) {
 		new Thread(){
 			@Override
 			public void run(){
@@ -300,11 +324,9 @@ public class Server {
 					objcount++;
 				}
 
-				sendMessage(""+objcount);
-
 				sendPacket("total", ""+objcount, p);
 
-				for(BaseObject obj : world.getObjects()){
+				for(final BaseObject obj : world.getObjects()){
 
 					new Thread(){
 						@Override
@@ -344,10 +366,9 @@ public class Server {
 		return null;
 	}
 
-	@Deprecated
 	public static Player getPlayer(String name){
 		for(Player p : players){
-			if(p.getName().equals("name")){
+			if(p.getName().equals(name)){
 				return p;
 			}
 		}
@@ -397,5 +418,8 @@ public class Server {
 			eventhandlers = new ArrayList<EventHandler>();
 		eventhandlers.add(handler);
 	}
-
+	
+	public static ArrayList<Packet> getPackets(){
+		return packets;
+	}
 }

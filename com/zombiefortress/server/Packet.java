@@ -1,6 +1,6 @@
 package com.zombiefortress.server;
 
-public abstract class Packet {
+public class Packet {
 	
 	private String type;
 	protected String[] data;
@@ -8,7 +8,7 @@ public abstract class Packet {
 
 	public Packet(String type, String data) {
 		this.type = type;
-		this.data = data.split(",");
+		this.data = data.trim().split(",");
 	}
 	
 	public String getType(){
@@ -18,6 +18,5 @@ public abstract class Packet {
 	public String[] getData(){
 		return data;
 	}
-	
-	public abstract void run();
+
 }

@@ -15,6 +15,7 @@ public class Player {
 	private UUID uuid;
 	private String name;
 	private boolean isOnline;
+	private long keepAlive;
 	
 	private int health;
 	
@@ -25,6 +26,7 @@ public class Player {
 		this.isOnline = true;
 		this.uuid = UUID.randomUUID();
 		health = 1000;
+		keepAlive = System.currentTimeMillis();
 	}
 
 	public String getName() {
@@ -97,5 +99,13 @@ public class Player {
 		Server.sendPacket("kick", reason, this);
 		Server.sendMessage(name + " Was kicked for " + reason);
 		this.isOnline = false;
+	}
+	
+	public void keepAlive(){
+		keepAlive = System.currentTimeMillis();
+	}
+
+	public long getLastKeepAlive() {
+		return keepAlive;
 	}
 }
